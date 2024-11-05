@@ -24,4 +24,5 @@ struct SeaTree {
     void information_gain() {};
     void find_best_split() {};
     void fit_model() {};
+    
 };
