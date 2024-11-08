@@ -7,9 +7,8 @@
 #include <string>
 #include <vector>
 
-using Target = std::vector<float>;
-using FileRow = std::vector<float>;
-using FileData = std::vector<FileRow>;
+using Vector = std::vector<float>;
+using Matrix = std::vector<Vector>;
 
 struct Reader {
 
@@ -55,26 +54,30 @@ struct Reader {
         }
     }
 
-    void read_predictors(FileData& data) {
+    void read_predictors(Matrix& data) {
 
         std::ifstream file(predictors_path);
         std::string line;
 
-        int n_predictors;
+        int n_predictors = 0;
         int index = 0;
 
         while (std::getline(file, line)) {
 
             std::stringstream stream(line);
             std::string value;
-            FileRow row;
+            Vector row;
 
             while (std::getline(stream, value, ',')) {
                 row.push_back(str_to_num(value, "Predictors", index));
             }
 
             if (index == 0) {
-                n_predictors = row.size();
+                for (float i : row) {
+                    n_predictors += 1;
+                    Vector column = {i};
+                    data.push_back(column);
+                }
             }
 
             if (index > 0 && row.size() != n_predictors) {
@@ -86,14 +89,24 @@ struct Reader {
                 std::exit(1);
             }
 
-            data.push_back(row);
+            if (index > 0) {
+                for (int i = 0; i < n_predictors; i++) {
+                    data[i].push_back(row[i]);
+                }
+            }
+
             index += 1;
+        }
+
+        if (data.size() == 0) {
+            std::cout << "Predictor did not contain readable records!";
+            std::exit(1);
         }
 
         file.close();
     }
 
-    void read_targets(Target& data, int n_record) {
+    void read_targets(Vector& data, int n_record) {
 
         std::ifstream file(target_path);
         std::string line;
@@ -106,7 +119,7 @@ struct Reader {
         }
 
         if (data.size() != n_record) {
-            std::cout << "Target file is misaligned! The " ;
+            std::cout << "Target file is misaligned! The ";
             std::cout << "predictors file contains ";
             std::cout << std::to_string(n_record) + " records";
             std::cout << " whereas the target file contains ";
